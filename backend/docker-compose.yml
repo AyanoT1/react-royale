@@ -7,8 +7,7 @@ services:
     env_file:
       - .env
     volumes:
-      - mongo-data:/data/dev
-      - mongo-data:/data/test
+      - mongo-data:/data/db
 
 volumes:
   mongo-data:

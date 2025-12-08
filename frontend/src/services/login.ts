@@ -1,5 +1,4 @@
-import axios from 'axios'
-import axiosSecure from '@/utils/axiosSecure'
+import axiosSecure, { axiosInstance } from '@/utils/axiosSecure'
 import type { Credentials } from '@/types/types'
 
 type LoginResponse = {
@@ -8,7 +7,7 @@ type LoginResponse = {
 }
 
 const login = async (credentials: Credentials): Promise<LoginResponse> => {
-  const response = await axios.post('/api/login', credentials)
+  const response = await axiosInstance.post('/api/login', credentials)
 
   const csrfToken = response.headers['x-csrf-token']
 
@@ -29,7 +28,7 @@ const restoreLogin = async (): Promise<LoginResponse | null> => {
 }
 
 const logout = async (): Promise<void> => {
-  await axios.post('/api/login/logout')
+  await axiosInstance.post('/api/login/logout')
   localStorage.removeItem('csrfToken')
 }
 

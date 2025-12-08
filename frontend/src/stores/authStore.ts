@@ -1,5 +1,4 @@
-import axios from 'axios'
-import axiosSecure from '@/utils/axiosSecure'
+import axiosSecure, { axiosInstance } from '@/utils/axiosSecure'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Credentials, UserData } from '@/types/types'
@@ -28,7 +27,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       token: null,
 
       login: async (credentials: Credentials) => {
-        const response = await axios.post('/api/login', credentials)
+        const response = await axiosInstance.post('/api/login', credentials)
         const csrfToken = response.headers['x-csrf-token']
 
         if (csrfToken) {
@@ -55,7 +54,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
       },
       logout: async () => {
         try {
-          await axios.post('/api/login/logout')
+          await axiosInstance.post('/api/login/logout')
         } finally {
           localStorage.removeItem('csrfToken')
           localStorage.removeItem('auth-storage')
@@ -63,7 +62,7 @@ export const useAuthStore = create<AuthState & AuthActions>()(
         }
       },
       signup: async (credentials: Credentials) => {
-        const response = await axios.post('/api/signup', credentials)
+        const response = await axiosInstance.post('/api/signup', credentials)
         const csrfToken = response.headers['x-csrf-token']
 
         if (csrfToken) {

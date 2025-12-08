@@ -1,5 +1,4 @@
-import axios from 'axios'
-import axiosSecure from '@/utils/axiosSecure'
+import axiosSecure, { axiosInstance } from '@/utils/axiosSecure'
 import { create } from 'zustand'
 import type { Submission } from '@/types/types'
 
@@ -26,7 +25,7 @@ export const useSubmissionStore = create<SubmissionState & SubmissionActions>()(
       return response.data
     }).catch(() => {
       // Fallback to regular axios if not authenticated
-      return axios.get<Submission[]>(baseUrl).then((response) => {
+      return axiosInstance.get<Submission[]>(baseUrl).then((response) => {
         set({ submissions: response.data })
         return response.data
       })
