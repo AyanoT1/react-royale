@@ -56,7 +56,7 @@ jobs:
       - name: Create Backend .env file
         working-directory: ./backend
         run: |
-          cat << EOF > .env
+          cat << EOF > .env.local
           PORT=4000
           HOST=localhost
           JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret_for_ci' }}
