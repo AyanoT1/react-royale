@@ -45,14 +45,6 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
-      - name: Install E2E Test Dependencies
-        working-directory: ./e2etests
-        run: npm ci
-
-      - name: Install Playwright Browsers
-        working-directory: ./e2etests
-        run: npx playwright install --with-deps chromium
-
       - name: Create Backend .env file
         working-directory: ./backend
         run: |
