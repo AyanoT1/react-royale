@@ -1,5 +1,4 @@
-import axios from 'axios'
-import axiosSecure from '@/utils/axiosSecure'
+import axiosSecure, { axiosInstance } from '@/utils/axiosSecure'
 import { create } from 'zustand'
 import type { Hackaton } from '@/types/types'
 
@@ -20,7 +19,7 @@ export const useHackatonStore = create<HackatonActions & HackatonState>()((set) 
   hackatons: [],
 
   fetchHackatons: () => {
-    return axios.get<Hackaton[]>(baseUrl).then((response: { data: Hackaton[] }) => {
+    return axiosInstance.get<Hackaton[]>(baseUrl).then((response: { data: Hackaton[] }) => {
       set({ hackatons: response.data })
       return response.data
     })

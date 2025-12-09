@@ -1,15 +1,14 @@
-import axios from 'axios'
-import axiosSecure from '@/utils/axiosSecure'
+import axiosSecure, { axiosInstance } from '@/utils/axiosSecure'
 import type { Submission } from '@/types/types'
 
 const baseUrl = '/api/submissions'
 
 const getSubmission = (hackatonId: string): Promise<Submission> => {
-  return axios.get<Submission>(`${baseUrl}/${hackatonId}`).then((response) => response.data)
+  return axiosInstance.get<Submission>(`${baseUrl}/${hackatonId}`).then((response) => response.data)
 }
 
 const getSubmissions = (): Promise<Submission[]> => {
-  return axios.get<Submission[]>(`${baseUrl}`).then((response) => response.data)
+  return axiosInstance.get<Submission[]>(`${baseUrl}`).then((response) => response.data)
 }
 
 type omit = 'id' | 'hasVoted'
