@@ -1,17 +1,16 @@
-import axios from 'axios'
-import axiosSecure from '@/utils/axiosSecure'
+import axiosSecure, { axiosInstance } from '@/utils/axiosSecure'
 import type { Hackaton } from '@/types/types'
 
 const baseUrl = '/api/hackatons'
 
 const getHackaton = (id: string): Promise<Hackaton> => {
-  return axios
+  return axiosInstance
     .get<Hackaton>(`${baseUrl}/${id}`)
     .then((response: { data: Hackaton }) => response.data)
 }
 
 const getHackatons = (): Promise<Hackaton[]> => {
-  return axios.get<Hackaton[]>(`${baseUrl}`).then((response: { data: Hackaton[] }) => response.data)
+  return axiosInstance.get<Hackaton[]>(`${baseUrl}`).then((response: { data: Hackaton[] }) => response.data)
 }
 
 const createHackaton = (data: Omit<Hackaton, 'id'>): Promise<Hackaton> => {

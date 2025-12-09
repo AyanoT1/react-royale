@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useField } from '@/hooks/useField'
 import { toast } from 'sonner'
 import axios from 'axios'
+import { axiosInstance } from '@/utils/axiosSecure'
 import { useAuthStore } from '@/stores/authStore'
 
 interface Signup2Props {
@@ -43,7 +44,7 @@ const Signup2 = ({
     }
 
     try {
-      await axios.post('/api/users', {
+      await axiosInstance.post('/api/users', {
         username: credentials.username,
         name: name.value,
         password: credentials.password,

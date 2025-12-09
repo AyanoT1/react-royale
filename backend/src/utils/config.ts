@@ -1,11 +1,12 @@
 import dotenv from 'dotenv'
 import path from 'path'
 
-const envFile = process.env.NODE_ENV === 'production' 
-  ? '.env' 
-  : '.env.local'
-
-dotenv.config({ path: path.resolve(process.cwd(), envFile) })
+// In production (Cloud Run), environment variables are injected directly
+// Only load .env files in development/test environments
+if (process.env.NODE_ENV !== 'production') {
+  const envFile = process.env.NODE_ENV === 'test' ? '.env.local' : '.env.local'
+  dotenv.config({ path: path.resolve(process.cwd(), envFile) })
+}
 
 const PORT = process.env.PORT
 const HOST = process.env.HOST || 'localhost'
