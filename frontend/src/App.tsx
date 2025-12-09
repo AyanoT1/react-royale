@@ -30,6 +30,7 @@ function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <PageHeader user={user} logout={logout} />
+      <h1>Pequeño test para la demo</h1>
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
