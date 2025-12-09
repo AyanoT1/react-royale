@@ -28,7 +28,7 @@ function App() {
   }, [fetchHackatons, fetchSubmissions, restoreLogin])
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <PageHeader user={user} logout={logout} />
 
       <Routes>

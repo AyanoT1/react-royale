@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "NODE_ENV=production node dist/src/index.js",
     "dev": "NODE_ENV=development ts-node-dev src/index.ts",
-    "test": "NODE_ENV=test tsx --test --test-concurrency=1 src/tests/*.test.ts",
+    "test": "NODE_ENV=test tsx --test --test-concurrency=1 --test-timeout=30000 src/tests/*.test.ts",
     "build:ui": "rm -rf dist && cd ../frontend && npm run build && cp -r dist ../backend",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

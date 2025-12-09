@@ -1,6 +1,13 @@
 import axios from 'axios'
 
+// Base axios instance with base URL configured
+export const axiosInstance = axios.create({
+  baseURL: import.meta.env.BASE_URL,
+})
+
+// Secure axios instance with CSRF token handling
 const axiosSecure = axios.create({
+  baseURL: import.meta.env.BASE_URL,
   withCredentials: true,
 })
 

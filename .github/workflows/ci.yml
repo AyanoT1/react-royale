@@ -1,0 +1,91 @@
+name: CI - Test on Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+            e2etests/package-lock.json
+
+      - name: Install Backend Dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Install E2E Test Dependencies
+        working-directory: ./e2etests
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        working-directory: ./e2etests
+        run: npx playwright install --with-deps chromium
+
+      - name: Create Backend .env file
+        working-directory: ./backend
+        run: |
+          cat << EOF > .env.local
+          PORT=4000
+          HOST=localhost
+          JWT_SECRET=${{ secrets.JWT_SECRET || 'test_jwt_secret_for_ci' }}
+
+          MONGODB_URI=mongodb://admin:password@localhost:27017/dev?authSource=admin
+          MONGODB_DBNAME=dev
+
+          TEST_MONGODB_URI=mongodb://admin:password@localhost:27017/test?authSource=admin
+          TEST_MONGODB_DBNAME=test
+
+          MONGO_INITDB_ROOT_USERNAME=admin
+          MONGO_INITDB_ROOT_PASSWORD=password
+
+          FRONTEND_URL=http://localhost:5173
+          CORS_ORIGINS=http://localhost:5173
+          EOF
+
+      - name: Run Backend Tests
+        working-directory: ./backend
+        run: npm test
+
+      - name: Run Frontend Tests
+        working-directory: ./frontend
+        run: npm test
+
+      - name: Build Backend
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: npm run build

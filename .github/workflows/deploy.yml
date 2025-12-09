@@ -1,0 +1,130 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION || 'us-central1' }}
+  SERVICE_NAME: react-royale
+  MONGODB_SERVICE_NAME: react-royale-mongodb
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCP
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      - name: Build Application Image
+        run: |
+          docker build \
+            --build-arg VITE_BASE_PATH=${{ secrets.VITE_BASE_PATH || '/' }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:latest \
+            -f Dockerfile .
+
+      - name: Push Application Image
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:latest
+
+      - name: Create Artifact Registry Repository (if not exists)
+        continue-on-error: true
+        run: |
+          gcloud artifacts repositories create react-royale \
+            --repository-format=docker \
+            --location=${{ env.REGION }} \
+            --description="Docker repository for React Royale"
+
+      - name: Deploy MongoDB to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.MONGODB_SERVICE_NAME }} \
+            --image=mongo:latest \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --allow-unauthenticated \
+            --port=27017 \
+            --set-env-vars="MONGO_INITDB_ROOT_USERNAME=${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" \
+            --set-env-vars="MONGO_INITDB_ROOT_PASSWORD=${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}" \
+            --cpu=1 \
+            --memory=512Mi \
+            --min-instances=1 \
+            --max-instances=1 \
+            --no-cpu-throttling \
+            --execution-environment=gen2
+        continue-on-error: true
+
+      - name: Get MongoDB Service URL
+        id: mongodb-url
+        run: |
+          MONGODB_URL=$(gcloud run services describe ${{ env.MONGODB_SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)' || echo "mongodb://mongodb:27017")
+          # Extract hostname from URL and construct MongoDB URI
+          MONGODB_HOST=$(echo $MONGODB_URL | sed 's|https://||' | sed 's|http://||')
+          echo "MONGODB_HOST=$MONGODB_HOST" >> $GITHUB_OUTPUT
+          echo "MongoDB will be accessible at: $MONGODB_HOST"
+
+      - name: Deploy Application to Cloud Run (Initial)
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:${{ github.sha }} \
+            --platform=managed \
+            --region=${{ env.REGION }} \
+            --allow-unauthenticated \
+            --port=7137 \
+            --set-env-vars="PORT=7137" \
+            --set-env-vars="HOST=0.0.0.0" \
+            --set-env-vars="JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+            --set-env-vars="MONGODB_URI=${{ secrets.MONGODB_URI }}" \
+            --set-env-vars="MONGODB_DBNAME=${{ secrets.MONGODB_DBNAME || 'db' }}" \
+            --cpu=1 \
+            --memory=512Mi \
+            --min-instances=0 \
+            --max-instances=10 \
+            --execution-environment=gen2
+
+      - name: Get Service URL and Update Environment Variables
+        id: get-url
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --format='value(status.url)')
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "Application deployed at: $SERVICE_URL"
+
+          # Update service with correct CORS and frontend URL
+          gcloud run services update ${{ env.SERVICE_NAME }} \
+            --region=${{ env.REGION }} \
+            --set-env-vars="FRONTEND_URL=$SERVICE_URL" \
+            --set-env-vars="CORS_ORIGINS=$SERVICE_URL"
+
+          echo "Environment variables updated with service URL"
+
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project ID**: ${{ env.PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service Name**: ${{ env.SERVICE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service URL**: ${{ steps.get-url.outputs.SERVICE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment Time**: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **Access your application at:** ${{ steps.get-url.outputs.SERVICE_URL }}" >> $GITHUB_STEP_SUMMARY
