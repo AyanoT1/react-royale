@@ -39,11 +39,6 @@ jobs:
             -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:latest \
             -f Dockerfile .
 
-      - name: Push Application Image
-        run: |
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:${{ github.sha }}
-          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:latest
-
       - name: Create Artifact Registry Repository (if not exists)
         continue-on-error: true
         run: |
@@ -51,6 +46,11 @@ jobs:
             --repository-format=docker \
             --location=${{ env.REGION }} \
             --description="Docker repository for React Royale"
+
+      - name: Push Application Image
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/react-royale/${{ env.SERVICE_NAME }}:latest
 
       - name: Deploy MongoDB to Cloud Run
         run: |
