@@ -5,9 +5,9 @@ services:
     ports:
       - '27017:27017'
     env_file:
-      - .env
+      - .env.local
     volumes:
-      - mongo-data:/data/db
+      - mongo-data:/data/test
 
 volumes:
   mongo-data:
