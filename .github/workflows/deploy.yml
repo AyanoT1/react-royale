@@ -95,8 +95,8 @@ jobs:
           # Update service with correct CORS and frontend URL
           gcloud run services update ${{ env.SERVICE_NAME }} \
             --region=${{ env.REGION }} \
-            --set-env-vars="FRONTEND_URL=$SERVICE_URL" \
-            --set-env-vars="CORS_ORIGINS=$SERVICE_URL"
+            --update-env-vars="FRONTEND_URL=$SERVICE_URL" \
+            --update-env-vars="CORS_ORIGINS=$SERVICE_URL"
 
           echo "Environment variables updated with service URL"
 
